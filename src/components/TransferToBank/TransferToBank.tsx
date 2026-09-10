@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft, Check, RefreshCw } from 'lucide-react'
 import { useBanks } from '../../hooks/useBanks'
 import type { Bank, ViewState } from '../../types/bank.types'
@@ -20,6 +20,21 @@ function formatLastUpdated(lastUpdated: Date | null) {
   return `${elapsedMinutes} min ago`
 }
 
+function isViewState(value: unknown): value is ViewState {
+  return ['loaded', 'skeleton', 'empty', 'error'].includes(String(value))
+}
+
+function getHistoryState() {
+  return typeof window.history.state === 'object' && window.history.state !== null
+    ? window.history.state
+    : {}
+}
+
+function getInitialViewState(): ViewState {
+  const savedState = getHistoryState().previewState
+  return isViewState(savedState) ? savedState : 'loaded'
+}
+
 export function TransferToBank() {
   const {
     banks,
@@ -29,8 +44,26 @@ export function TransferToBank() {
     lastUpdated,
     refetch,
   } = useBanks()
-  const [previewState, setPreviewState] = useState<ViewState>('loaded')
+  const [previewState, setPreviewState] =
+    useState<ViewState>(getInitialViewState)
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
+
+  useEffect(() => {
+    window.history.replaceState(
+      { ...getHistoryState(), previewState: getInitialViewState() },
+      '',
+      window.location.href,
+    )
+
+    function handleHistoryChange(event: PopStateEvent) {
+      const nextState = event.state?.previewState
+      setPreviewState(isViewState(nextState) ? nextState : 'loaded')
+      setSelectedBank(null)
+    }
+
+    window.addEventListener('popstate', handleHistoryChange)
+    return () => window.removeEventListener('popstate', handleHistoryChange)
+  }, [])
 
   function handleBankSelect(bank: Bank) {
     setSelectedBank(bank)
@@ -40,7 +73,24 @@ export function TransferToBank() {
     if (window.history.length > 1) window.history.back()
   }
 
+  function handlePreviewStateChange(nextState: ViewState) {
+    if (nextState === previewState) return
+
+    window.history.pushState(
+      { ...getHistoryState(), previewState: nextState },
+      '',
+      window.location.href,
+    )
+    setPreviewState(nextState)
+    setSelectedBank(null)
+  }
+
   function handleRetry() {
+    window.history.replaceState(
+      { ...getHistoryState(), previewState: 'loaded' },
+      '',
+      window.location.href,
+    )
     setPreviewState('loaded')
     void refetch()
   }
@@ -98,7 +148,7 @@ export function TransferToBank() {
         </header>
 
         <div className="mt-7">
-          <StatusTabs value={previewState} onChange={setPreviewState} />
+          <StatusTabs value={previewState} onChange={handlePreviewStateChange} />
         </div>
 
         <section
