@@ -126,7 +126,7 @@ export function TransferToBank() {
             disabled={isRefreshing}
             aria-label="Refresh bank service health"
             title="Refresh bank service health"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3f5f8] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-600 shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3f5f8] disabled:cursor-not-allowed disabled:opacity-70"
           >
             <RefreshCw
               aria-hidden="true"
@@ -153,6 +153,7 @@ export function TransferToBank() {
 
         <section
           aria-label="Bank service health"
+          aria-busy={isLoading || isRefreshing}
           className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
         >
           <div className="flex min-h-16 items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6">
@@ -174,6 +175,17 @@ export function TransferToBank() {
               LIVE
             </span>
           </div>
+
+          {isRefreshing && previewState === 'loaded' && !isLoading && (
+            <div
+              role="status"
+              aria-label="Refreshing bank service health"
+              className="flex h-24 items-center justify-center border-b border-slate-100 text-blue-600"
+            >
+              <RefreshCw aria-hidden="true" className="h-8 w-8 animate-spin" />
+              <span className="sr-only">Refreshing bank service health.</span>
+            </div>
+          )}
 
           {renderContent()}
         </section>
